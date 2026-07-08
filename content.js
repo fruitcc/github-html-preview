@@ -144,13 +144,13 @@
     container.className = 'ghp-preview';
     container.ghpCodeSection = codeSection;
 
+    // viewer.html relays to the manifest-sandboxed renderer page; embedding
+    // sandbox.html directly here reloads the tab (web pages can't embed
+    // manifest-sandboxed extension pages). Isolation comes from the manifest
+    // sandbox on the inner frame.
     const iframe = document.createElement('iframe');
     iframe.className = 'ghp-frame';
-    iframe.setAttribute(
-      'sandbox',
-      'allow-scripts allow-forms allow-popups allow-modals allow-downloads'
-    );
-    iframe.src = chrome.runtime.getURL('sandbox.html');
+    iframe.src = chrome.runtime.getURL('viewer.html');
     iframe.addEventListener('load', () => {
       iframe.contentWindow.postMessage(
         { html, baseUrl: baseUrlFor(info) },
@@ -198,9 +198,11 @@
 
     // Size the frame to fill the viewport below its top edge.
     requestAnimationFrame(() => {
+      const frame = container.querySelector('iframe');
+      if (!frame) return;
       const top = container.getBoundingClientRect().top + window.scrollY;
       const h = Math.max(500, window.innerHeight - Math.min(top, 300) - 16);
-      container.querySelector('iframe').style.height = h + 'px';
+      frame.style.height = h + 'px';
     });
   }
 

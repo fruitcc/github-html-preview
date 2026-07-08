@@ -26,7 +26,7 @@
   },
   "web_accessible_resources": [
     {
-      "resources": ["sandbox.html"],
+      "resources": ["viewer.html", "sandbox.html"],
       "matches": ["https://github.com/*"]
     }
   ]
