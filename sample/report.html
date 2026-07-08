@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Sample Report — GitHub HTML Preview self-test</title>
+<style>
+  :root { color-scheme: light; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    margin: 0; padding: 32px; background: #f6f8fa; color: #1f2328;
+  }
+  .card {
+    max-width: 760px; margin: 0 auto 16px; background: #fff;
+    border: 1px solid #d1d9e0; border-radius: 8px; padding: 20px 24px;
+  }
+  h1 { margin: 0 0 4px; font-size: 22px; }
+  .subtitle { color: #59636e; margin: 0 0 8px; }
+  .status { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; }
+  .ok { background: #dafbe1; color: #116329; }
+  .fail { background: #ffebe9; color: #a40e26; }
+  table { border-collapse: collapse; width: 100%; font-size: 14px; }
+  th, td { text-align: left; padding: 6px 10px; border-bottom: 1px solid #d8dee4; }
+  th { color: #59636e; font-weight: 600; }
+  details { margin-top: 8px; }
+  summary { cursor: pointer; font-weight: 600; }
+  button {
+    font: inherit; padding: 4px 12px; border-radius: 6px;
+    border: 1px solid #d1d9e0; background: #f6f8fa; cursor: pointer;
+  }
+  button:hover { background: #eef1f4; }
+  code { background: #f0f2f4; padding: 1px 5px; border-radius: 4px; font-size: 90%; }
+</style>
+</head>
+<body>
+  <div class="card">
+    <h1>Sample Report</h1>
+    <p class="subtitle">A self-test document for the GitHub HTML Preview extension.</p>
+    <p>
+      If you are reading styled text on a gray page — not raw HTML source — the
+      extension is rendering this file. Each check below verifies one capability.
+    </p>
+  </div>
+
+  <div class="card">
+    <table>
+      <tr><th>Check</th><th>Verifies</th><th>Result</th></tr>
+      <tr>
+        <td>Styled layout</td>
+        <td>Inline CSS applies</td>
+        <td><span class="status ok">pass (you can see this)</span></td>
+      </tr>
+      <tr>
+        <td>Script execution</td>
+        <td>Inline JavaScript runs</td>
+        <td><span id="js-check" class="status fail">fail — scripts blocked</span></td>
+      </tr>
+      <tr>
+        <td>Rendered at</td>
+        <td>Dynamic DOM writes</td>
+        <td><code id="rendered-at">n/a</code></td>
+      </tr>
+      <tr>
+        <td>Isolation</td>
+        <td>No access to GitHub session</td>
+        <td><code id="isolation">n/a</code></td>
+      </tr>
+    </table>
+  </div>
+
+  <div class="card">
+    <details>
+      <summary>Interactivity check — click to expand</summary>
+      <p>
+        Native <code>&lt;details&gt;</code> works even without scripts. For a
+        script-driven check, this button counts clicks:
+        <button id="counter-btn">clicked 0 times</button>
+      </p>
+    </details>
+  </div>
+
+<script>
+  document.getElementById('js-check').textContent = 'pass';
+  document.getElementById('js-check').className = 'status ok';
+  document.getElementById('rendered-at').textContent = new Date().toLocaleString();
+  // In the extension's sandboxed frame this document has an opaque origin and
+  // no cookies; document.cookie access throwing or being empty is expected.
+  let iso;
+  try { iso = document.cookie === '' ? 'opaque origin, no cookies' : 'UNEXPECTED: cookies visible'; }
+  catch (e) { iso = 'opaque origin (cookie access blocked)'; }
+  document.getElementById('isolation').textContent = iso;
+  let n = 0;
+  document.getElementById('counter-btn').addEventListener('click', () => {
+    document.getElementById('counter-btn').textContent = 'clicked ' + (++n) + ' times';
+  });
+</script>
+</body>
+</html>
