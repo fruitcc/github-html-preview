@@ -16,14 +16,25 @@
     return { owner: m[1], repo: m[2], rest };
   }
 
-  // GitHub embeds the file content in a JSON payload on blob pages.
+  // GitHub embeds the file content in a JSON payload on blob pages. The blob
+  // object's nesting varies by route version, so search for it.
+  function findBlobIn(obj, depth) {
+    if (!obj || typeof obj !== 'object' || depth > 8) return null;
+    if (Array.isArray(obj.rawLines)) return obj;
+    for (const key of Object.keys(obj)) {
+      const found = findBlobIn(obj[key], depth + 1);
+      if (found) return found;
+    }
+    return null;
+  }
+
   function getEmbeddedBlob() {
     for (const s of document.querySelectorAll(
       'script[data-target="react-app.embeddedData"]'
     )) {
       try {
-        const blob = JSON.parse(s.textContent)?.payload?.blob;
-        if (blob && Array.isArray(blob.rawLines)) return blob;
+        const blob = findBlobIn(JSON.parse(s.textContent)?.payload, 0);
+        if (blob) return blob;
       } catch (e) {
         /* ignore */
       }
@@ -38,7 +49,10 @@
     }
     // Fallback (large/truncated files): fetch raw via the background worker,
     // using the session so private repos work.
-    const url = `https://github.com/${info.owner}/${info.repo}/raw/${info.rest}`;
+    const rawBtn = document.querySelector('[data-testid="raw-button"]');
+    const url =
+      (rawBtn && rawBtn.href) ||
+      `https://github.com/${info.owner}/${info.repo}/raw/${info.rest}`;
     const resp = await chrome.runtime.sendMessage({ type: 'fetchRaw', url });
     if (!resp || !resp.ok) {
       throw new Error(resp ? resp.error : 'no response from background');
@@ -64,11 +78,10 @@
   }
 
   function findToolbarAnchor() {
-    // The Raw button's button-group in the file header.
-    const raw =
-      document.querySelector('[data-testid="raw-button"]') ||
-      document.querySelector('a[href*="/raw/"][data-size]');
-    return raw ? raw.closest('div') : null;
+    // The button group holding Raw/Copy/Download in the file header.
+    const raw = document.querySelector('[data-testid="raw-button"]');
+    if (!raw) return null;
+    return raw.closest('div[class*="ButtonGroup-ButtonGroup"]') || raw.closest('div');
   }
 
   function removeInjected() {
