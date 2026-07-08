@@ -63,6 +63,7 @@
     const codeSection = container.ghpCodeSection;
     if (mode === 'preview') {
       container.style.display = '';
+      ensureFrame(container);
       if (codeSection) {
         codeSection.style.display = 'none';
         codeSection.setAttribute('data-ghp-hidden', '1');
@@ -99,22 +100,54 @@
     return wrap;
   }
 
-  function buildPreview(info, codeSection) {
-    const container = document.createElement('div');
-    container.id = PREVIEW_ID;
-    container.className = 'ghp-preview';
-    container.ghpCodeSection = codeSection;
-
-    // viewer.html (extension page, exempt from GitHub's CSP) frames the raw
-    // URL in a sandboxed iframe; the background's DNR rules make the raw
-    // response render as HTML.
+  // (Re)creates the preview iframe if missing. viewer.html (extension page,
+  // exempt from GitHub's CSP) frames the raw URL in a sandboxed iframe; the
+  // background's DNR rules make the raw response render as HTML.
+  function ensureFrame(container) {
+    if (container.querySelector('iframe')) return;
     const iframe = document.createElement('iframe');
     iframe.className = 'ghp-frame';
     iframe.src =
       chrome.runtime.getURL('viewer.html') +
       '#' +
-      encodeURIComponent(getRawUrl(info));
+      encodeURIComponent(getRawUrl(container.ghpInfo));
     container.appendChild(iframe);
+    // Size the frame to fill the viewport below its top edge.
+    requestAnimationFrame(() => {
+      if (!iframe.isConnected) return;
+      const top = container.getBoundingClientRect().top + window.scrollY;
+      const h = Math.max(500, window.innerHeight - Math.min(top, 300) - 16);
+      iframe.style.height = h + 'px';
+    });
+  }
+
+  function buildPreview(info, codeSection) {
+    const container = document.createElement('div');
+    container.id = PREVIEW_ID;
+    container.className = 'ghp-preview';
+    container.ghpCodeSection = codeSection;
+    container.ghpInfo = info;
+    container.ghpRestores = 0;
+    ensureFrame(container);
+
+    // Something in the page environment (Turbo DOM morphing or another
+    // extension's content script) sporadically deletes the iframe while
+    // leaving the container. Watch and re-create it, capped to avoid a
+    // remove/re-add loop.
+    const watchdog = new MutationObserver(() => {
+      if (!container.isConnected || container.ghpRestores >= 20) {
+        watchdog.disconnect();
+        return;
+      }
+      if (
+        container.style.display !== 'none' &&
+        !container.querySelector('iframe')
+      ) {
+        container.ghpRestores++;
+        ensureFrame(container);
+      }
+    });
+    watchdog.observe(container, { childList: true });
     return container;
   }
 
@@ -143,15 +176,6 @@
     }
 
     setMode('preview');
-
-    // Size the frame to fill the viewport below its top edge.
-    requestAnimationFrame(() => {
-      const frame = container.querySelector('iframe');
-      if (!frame) return;
-      const top = container.getBoundingClientRect().top + window.scrollY;
-      const h = Math.max(500, window.innerHeight - Math.min(top, 300) - 16);
-      frame.style.height = h + 'px';
-    });
   }
 
   function onNavigate() {
