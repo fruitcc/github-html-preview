@@ -16,53 +16,15 @@
     return { owner: m[1], repo: m[2], rest };
   }
 
-  // GitHub embeds the file content in a JSON payload on blob pages. The blob
-  // object's nesting varies by route version, so search for it.
-  function findBlobIn(obj, depth) {
-    if (!obj || typeof obj !== 'object' || depth > 8) return null;
-    if (Array.isArray(obj.rawLines)) return obj;
-    for (const key of Object.keys(obj)) {
-      const found = findBlobIn(obj[key], depth + 1);
-      if (found) return found;
-    }
-    return null;
-  }
-
-  function getEmbeddedBlob() {
-    for (const s of document.querySelectorAll(
-      'script[data-target="react-app.embeddedData"]'
-    )) {
-      try {
-        const blob = findBlobIn(JSON.parse(s.textContent)?.payload, 0);
-        if (blob) return blob;
-      } catch (e) {
-        /* ignore */
-      }
-    }
-    return null;
-  }
-
-  async function getHtml(info) {
-    const blob = getEmbeddedBlob();
-    if (blob && !blob.truncated && blob.rawLines.length) {
-      return blob.rawLines.join('\n');
-    }
-    // Fallback (large/truncated files): fetch raw via the background worker,
-    // using the session so private repos work.
+  // The Raw button href is preferred: on private repos it is a tokenized
+  // raw.githubusercontent.com URL that needs no cookies. The constructed
+  // fallback works for public repos.
+  function getRawUrl(info) {
     const rawBtn = document.querySelector('[data-testid="raw-button"]');
-    const url =
+    return (
       (rawBtn && rawBtn.href) ||
-      `https://github.com/${info.owner}/${info.repo}/raw/${info.rest}`;
-    const resp = await chrome.runtime.sendMessage({ type: 'fetchRaw', url });
-    if (!resp || !resp.ok) {
-      throw new Error(resp ? resp.error : 'no response from background');
-    }
-    return resp.text;
-  }
-
-  function baseUrlFor(info) {
-    const dir = info.rest.slice(0, info.rest.lastIndexOf('/') + 1);
-    return `https://github.com/${info.owner}/${info.repo}/raw/${dir}`;
+      `https://github.com/${info.owner}/${info.repo}/raw/${info.rest}`
+    );
   }
 
   // The section wrapping the code view (line numbers, code, blob toolbar
@@ -137,25 +99,21 @@
     return wrap;
   }
 
-  function buildPreview(html, info, codeSection) {
+  function buildPreview(info, codeSection) {
     const container = document.createElement('div');
     container.id = PREVIEW_ID;
     container.className = 'ghp-preview';
     container.ghpCodeSection = codeSection;
 
-    // viewer.html relays to the manifest-sandboxed renderer page; embedding
-    // sandbox.html directly here reloads the tab (web pages can't embed
-    // manifest-sandboxed extension pages). Isolation comes from the manifest
-    // sandbox on the inner frame.
+    // viewer.html (extension page, exempt from GitHub's CSP) frames the raw
+    // URL in a sandboxed iframe; the background's DNR rules make the raw
+    // response render as HTML.
     const iframe = document.createElement('iframe');
     iframe.className = 'ghp-frame';
-    iframe.src = chrome.runtime.getURL('viewer.html');
-    iframe.addEventListener('load', () => {
-      iframe.contentWindow.postMessage(
-        { html, baseUrl: baseUrlFor(info) },
-        '*'
-      );
-    });
+    iframe.src =
+      chrome.runtime.getURL('viewer.html') +
+      '#' +
+      encodeURIComponent(getRawUrl(info));
     container.appendChild(iframe);
     return container;
   }
@@ -172,16 +130,7 @@
     }
     if (!section || document.getElementById(PREVIEW_ID)) return;
 
-    let html;
-    try {
-      html = await getHtml(info);
-    } catch (e) {
-      console.warn('[GitHub HTML Preview] could not load file:', e);
-      return; // leave the normal code view alone
-    }
-    if (token !== setupToken || document.getElementById(PREVIEW_ID)) return;
-
-    const container = buildPreview(html, info, section);
+    const container = buildPreview(info, section);
     section.parentElement.insertBefore(container, section);
 
     const toolbarAnchor = findToolbarAnchor();

@@ -1,8 +1,9 @@
 {
   "manifest_version": 3,
   "name": "GitHub HTML Preview",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Render .html files on GitHub as pages instead of source code, with a Code/Preview toggle.",
+  "permissions": ["declarativeNetRequest"],
   "host_permissions": [
     "https://github.com/*",
     "https://raw.githubusercontent.com/*"
@@ -18,15 +19,9 @@
       "run_at": "document_idle"
     }
   ],
-  "sandbox": {
-    "pages": ["sandbox.html"]
-  },
-  "content_security_policy": {
-    "sandbox": "sandbox allow-scripts allow-forms allow-popups allow-modals allow-downloads; default-src * data: blob: 'unsafe-inline' 'unsafe-eval';"
-  },
   "web_accessible_resources": [
     {
-      "resources": ["viewer.html", "sandbox.html"],
+      "resources": ["viewer.html"],
       "matches": ["https://github.com/*"]
     }
   ]
