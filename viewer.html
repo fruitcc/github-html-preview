@@ -21,9 +21,8 @@
     <script src="viewer.js" defer></script>
   </head>
   <body>
-    <iframe
-      id="frame"
-      sandbox="allow-scripts allow-forms allow-popups allow-modals allow-downloads"
-    ></iframe>
+    <!-- No allow-popups / allow-modals / allow-downloads: untrusted repo
+         HTML must not open windows, dialogs, or downloads. -->
+    <iframe id="frame" sandbox="allow-scripts allow-forms"></iframe>
   </body>
 </html>

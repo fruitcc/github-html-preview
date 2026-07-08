@@ -7,7 +7,8 @@ Default view is the rendered preview.
 - Works on `github.com` file (blob) pages, including private repos (private
   files load via the tokenized raw URL from the Raw button).
 - Scripts inside the document run, but in a sandboxed, origin-isolated frame:
-  no access to GitHub cookies, the GitHub page, or your session.
+  no access to GitHub cookies, the GitHub page, or your session — and no
+  popups, dialogs, or downloads.
 - Large files that GitHub truncates in the code view render in full (the
   preview loads the raw file directly).
 - How it renders: the preview frames the file's raw URL, and the extension

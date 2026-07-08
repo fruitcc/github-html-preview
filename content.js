@@ -11,9 +11,17 @@
   function parseBlobPath(pathname) {
     const m = pathname.match(/^\/([^/]+)\/([^/]+)\/blob\/(.+)$/);
     if (!m) return null;
-    const rest = decodeURIComponent(m[3]);
-    if (!/\.html?$/i.test(rest)) return null;
-    return { owner: m[1], repo: m[2], rest };
+    // Keep rest percent-encoded (it is spliced into a URL); decode only for
+    // the extension test so files like "my%20report.html" match and build
+    // valid raw URLs.
+    let decoded;
+    try {
+      decoded = decodeURIComponent(m[3]);
+    } catch (e) {
+      decoded = m[3];
+    }
+    if (!/\.html?$/i.test(decoded)) return null;
+    return { owner: m[1], repo: m[2], rest: m[3] };
   }
 
   // The Raw button href is preferred: on private repos it is a tokenized
@@ -47,7 +55,11 @@
   }
 
   function removeInjected() {
-    document.getElementById(PREVIEW_ID)?.remove();
+    const prev = document.getElementById(PREVIEW_ID);
+    if (prev) {
+      prev.ghpWatchdog?.disconnect();
+      prev.remove();
+    }
     document.getElementById(TOGGLE_ID)?.remove();
     const section = document.querySelector('[data-ghp-hidden]');
     if (section) {
@@ -63,6 +75,7 @@
     const codeSection = container.ghpCodeSection;
     if (mode === 'preview') {
       container.style.display = '';
+      container.ghpFailed = false; // user retry: rebuild even after a failed load
       ensureFrame(container);
       if (codeSection) {
         codeSection.style.display = 'none';
@@ -100,6 +113,15 @@
     return wrap;
   }
 
+  // Size the frame to fill the viewport below its top edge.
+  function sizeFrame(container) {
+    const iframe = container.querySelector('iframe');
+    if (!iframe) return;
+    const top = container.getBoundingClientRect().top + window.scrollY;
+    const h = Math.max(500, window.innerHeight - Math.min(top, 300) - 16);
+    iframe.style.height = h + 'px';
+  }
+
   // (Re)creates the preview iframe if missing. viewer.html (extension page,
   // exempt from GitHub's CSP) frames the raw URL in a sandboxed iframe; the
   // background's DNR rules make the raw response render as HTML.
@@ -112,13 +134,7 @@
       '#' +
       encodeURIComponent(getRawUrl(container.ghpInfo));
     container.appendChild(iframe);
-    // Size the frame to fill the viewport below its top edge.
-    requestAnimationFrame(() => {
-      if (!iframe.isConnected) return;
-      const top = container.getBoundingClientRect().top + window.scrollY;
-      const h = Math.max(500, window.innerHeight - Math.min(top, 300) - 16);
-      iframe.style.height = h + 'px';
-    });
+    requestAnimationFrame(() => sizeFrame(container));
   }
 
   function buildPreview(info, codeSection) {
@@ -133,14 +149,17 @@
     // Other software sharing the page (e.g. browser-automation tooling
     // periodically strips extension iframes; Turbo morphing can too) may
     // delete the iframe while leaving the container. Watch and re-create it,
-    // rate-limited so a hostile remove/re-add loop can't spin.
+    // rate-limited per minute and capped for the container's lifetime so the
+    // self-heal loop always terminates.
+    let lifetimeRestores = 0;
     const watchdog = new MutationObserver(() => {
-      if (!container.isConnected) {
+      if (!container.isConnected || lifetimeRestores >= 60) {
         watchdog.disconnect();
         return;
       }
       if (
         container.style.display === 'none' ||
+        container.ghpFailed ||
         container.querySelector('iframe')
       ) {
         return;
@@ -151,9 +170,11 @@
       );
       if (container.ghpRestores.length >= 10) return; // >10 removals/min: give up until it calms down
       container.ghpRestores.push(now);
+      lifetimeRestores++;
       ensureFrame(container);
     });
     watchdog.observe(container, { childList: true });
+    container.ghpWatchdog = watchdog;
     return container;
   }
 
@@ -194,16 +215,32 @@
     if (info) setup(info);
   }
 
-  // GitHub is a soft-navigating SPA (Turbo); watch for URL changes.
+  // If the viewer can't load the file (404, LFS pointer, auth), fall back to
+  // GitHub's code view instead of hiding it behind a broken preview.
+  window.addEventListener('message', (event) => {
+    if (event.origin !== 'chrome-extension://' + chrome.runtime.id) return;
+    if (!event.data || event.data.type !== 'ghp-load-failed') return;
+    const container = document.getElementById(PREVIEW_ID);
+    if (!container) return;
+    setMode('code');
+    container.ghpFailed = true; // suppress watchdog rebuilds until user retries
+  });
+
+  // GitHub is a soft-navigating SPA (Turbo); watch for URL changes via its
+  // navigation events rather than polling.
   document.addEventListener('turbo:load', onNavigate);
   document.addEventListener('turbo:render', onNavigate);
-  let lastHref = location.href;
-  setInterval(() => {
-    if (location.href !== lastHref) {
-      lastHref = location.href;
-      onNavigate();
-    }
-  }, 400);
+  document.addEventListener('soft-nav:success', onNavigate);
+  window.addEventListener('popstate', onNavigate);
+
+  let resizeTimer = null;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => {
+      const container = document.getElementById(PREVIEW_ID);
+      if (container) sizeFrame(container);
+    }, 150);
+  });
 
   onNavigate();
 })();

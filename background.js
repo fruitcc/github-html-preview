@@ -39,7 +39,26 @@ const RULES = [
   },
 ];
 
-chrome.declarativeNetRequest.updateSessionRules({
-  removeRuleIds: RULES.map((r) => r.id),
-  addRules: RULES,
+function installRules() {
+  return chrome.declarativeNetRequest.updateSessionRules({
+    removeRuleIds: RULES.map((r) => r.id),
+    addRules: RULES,
+  });
+}
+
+// Session rules are cleared on browser restart and this worker is lazy, so
+// install on every wake, on install/update, and on browser startup. The
+// viewer page additionally sends ensureRules before loading a document,
+// which both wakes the worker and confirms the rules exist.
+installRules();
+chrome.runtime.onInstalled.addListener(installRules);
+chrome.runtime.onStartup.addListener(installRules);
+chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+  if (msg && msg.type === 'ensureRules') {
+    installRules().then(
+      () => sendResponse({ ok: true }),
+      (e) => sendResponse({ ok: false, error: String(e) })
+    );
+    return true; // async sendResponse
+  }
 });

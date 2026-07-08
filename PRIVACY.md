@@ -39,18 +39,21 @@ and only to fetch the file you are already viewing.
 - **Host access to github.com and raw.githubusercontent.com:** required to
   detect HTML file pages on GitHub and load the raw file content for display.
   The extension runs only on these domains.
-- **declarativeNetRequest:** used to adjust response headers (content type
-  and content security policy) solely for raw HTML files loaded inside the
-  extension's own preview frame, so they can render as pages. These rules
-  apply only to requests initiated by the extension itself and never to your
-  normal browsing.
+- **declarativeNetRequest:** used to adjust response headers solely for raw
+  HTML files loaded inside the extension's own preview frame, so they can
+  render as pages. Specifically, the `Content-Type` header is set to
+  `text/html`, and the `Content-Security-Policy`, `X-Content-Type-Options`,
+  `Content-Disposition`, and `X-Frame-Options` headers are removed on those
+  responses. These rules apply only to `.html`/`.htm` sub-frame requests
+  initiated by the extension itself and never to your normal browsing.
 
 ## Security and isolation
 
 Previewed documents render inside a sandboxed, origin-isolated frame. Scripts
 within a previewed document cannot access your GitHub session, cookies, or
-the GitHub page. Files in private repositories are loaded using your own
-logged-in GitHub session and are never sent anywhere else.
+the GitHub page, and cannot open popups or dialogs or trigger downloads.
+Files in private repositories are loaded using your own logged-in GitHub
+session and are never sent anywhere else.
 
 ## Local storage
 
