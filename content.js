@@ -127,25 +127,31 @@
     container.className = 'ghp-preview';
     container.ghpCodeSection = codeSection;
     container.ghpInfo = info;
-    container.ghpRestores = 0;
+    container.ghpRestores = [];
     ensureFrame(container);
 
-    // Something in the page environment (Turbo DOM morphing or another
-    // extension's content script) sporadically deletes the iframe while
-    // leaving the container. Watch and re-create it, capped to avoid a
-    // remove/re-add loop.
+    // Other software sharing the page (e.g. browser-automation tooling
+    // periodically strips extension iframes; Turbo morphing can too) may
+    // delete the iframe while leaving the container. Watch and re-create it,
+    // rate-limited so a hostile remove/re-add loop can't spin.
     const watchdog = new MutationObserver(() => {
-      if (!container.isConnected || container.ghpRestores >= 20) {
+      if (!container.isConnected) {
         watchdog.disconnect();
         return;
       }
       if (
-        container.style.display !== 'none' &&
-        !container.querySelector('iframe')
+        container.style.display === 'none' ||
+        container.querySelector('iframe')
       ) {
-        container.ghpRestores++;
-        ensureFrame(container);
+        return;
       }
+      const now = Date.now();
+      container.ghpRestores = container.ghpRestores.filter(
+        (t) => now - t < 60000
+      );
+      if (container.ghpRestores.length >= 10) return; // >10 removals/min: give up until it calms down
+      container.ghpRestores.push(now);
+      ensureFrame(container);
     });
     watchdog.observe(container, { childList: true });
     return container;
