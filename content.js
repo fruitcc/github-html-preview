@@ -96,7 +96,6 @@
 
   function setMode(mode) {
     const container = document.getElementById(PREVIEW_ID);
-    const section = document.querySelector('[data-ghp-hidden], section[data-ghp-code]');
     const toggle = document.getElementById(TOGGLE_ID);
     if (!container) return;
     const codeSection = container.ghpCodeSection;
