@@ -22,6 +22,9 @@ const RULES = [
     condition: {
       regexFilter: '^https://raw\\.githubusercontent\\.com/.+\\.html?([?#].*)?$',
       resourceTypes: ['sub_frame'],
+      // Only requests initiated by this extension's viewer page — other
+      // sites framing raw HTML must not get the rewritten headers.
+      initiatorDomains: [chrome.runtime.id],
     },
   },
   {
@@ -31,6 +34,7 @@ const RULES = [
     condition: {
       regexFilter: '^https://github\\.com/[^/]+/[^/]+/raw/.+\\.html?([?#].*)?$',
       resourceTypes: ['sub_frame'],
+      initiatorDomains: [chrome.runtime.id],
     },
   },
 ];
