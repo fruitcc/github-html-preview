@@ -1,0 +1,90 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Marquee promo tile</title>
+<link rel="stylesheet" href="shared.css">
+<style>
+  body { width: 1400px; height: 560px; position: relative; }
+  .left { position: absolute; left: 90px; top: 0; bottom: 0; width: 520px; display: flex; flex-direction: column; justify-content: center; }
+  .brand { display: flex; align-items: center; gap: 16px; margin-bottom: 30px; }
+  .brand img { width: 46px; height: 57px; }
+  .brand span { font-size: 26px; font-weight: 700; letter-spacing: -.3px; }
+  h1 { font-size: 60px; line-height: 1.04; font-weight: 800; letter-spacing: -1.6px; text-shadow: 0 2px 16px rgba(2,26,64,.3); }
+  h1 em { font-style: normal; color: #9fd0ff; }
+  .sub { margin-top: 22px; font-size: 22px; line-height: 1.45; color: #d6e6fa; font-weight: 500; }
+  .chips { margin-top: 30px; display: flex; gap: 10px; flex-wrap: wrap; }
+  .chips span { font-size: 16px; font-weight: 600; padding: 8px 14px; border-radius: 999px; background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.22); }
+
+  /* Code card (behind) */
+  .code { position: absolute; left: 650px; top: 70px; width: 470px; height: 360px; border-radius: 14px; background: #0d1117; border: 1px solid #30363d; box-shadow: 0 30px 60px rgba(2,20,50,.5); transform: rotate(-4deg); overflow: hidden; }
+  .code .bar { height: 38px; background: #161b22; border-bottom: 1px solid #30363d; display: flex; align-items: center; padding: 0 14px; gap: 7px; }
+  .code .bar i { width: 11px; height: 11px; border-radius: 50%; background: #30363d; }
+  .code pre { padding: 16px 18px; font-size: 14.5px; line-height: 1.6; color: #e6edf3; white-space: pre; }
+  .t { color: #7ee787; } .a { color: #79c0ff; } .s { color: #a5d6ff; } .c { color: #8b949e; } .p { color: #ff7b72; }
+
+  /* Browser card (front) */
+  .win { position: absolute; left: 790px; top: 110px; width: 540px; height: 400px; border-radius: 14px; background: #fff; box-shadow: 0 40px 80px rgba(2,20,50,.55), 0 0 0 1px rgba(0,0,0,.06); overflow: hidden; color: #1f2328; }
+  .win .chrome { height: 34px; background: #eef1f4; display: flex; align-items: center; padding: 0 14px; gap: 7px; }
+  .win .chrome i { width: 11px; height: 11px; border-radius: 50%; }
+  .win .chrome .url { margin-left: 14px; flex: 1; height: 20px; border-radius: 6px; background: #fff; font-size: 11.5px; color: #59636e; display: flex; align-items: center; padding: 0 10px; }
+  .win .filebar { height: 48px; border-bottom: 1px solid #d1d9e0; background: #f6f8fa; display: flex; align-items: center; justify-content: space-between; padding: 0 14px; }
+  .win .fname { font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+  .win .fname b { font-weight: 400; color: #59636e; }
+  .win .toggle { height: 30px; font-size: 13px; }
+  .win .toggle span { padding: 0 12px; }
+  .win .raw { margin-left: 8px; height: 30px; border: 1px solid #d1d9e0; border-radius: 8px; font-size: 13px; font-weight: 600; padding: 0 12px; display: inline-flex; align-items: center; background: #f6f8fa; }
+  .win .body { padding: 20px 22px; background: #f6f8fa; height: 100%; }
+  .card { background: #fff; border: 1px solid #d1d9e0; border-radius: 10px; padding: 16px 18px; margin-bottom: 12px; }
+  .card h2 { font-size: 20px; margin-bottom: 4px; }
+  .card .muted { color: #59636e; font-size: 13px; }
+  .stats { display: flex; gap: 12px; margin-top: 14px; }
+  .stat { flex: 1; border-radius: 8px; padding: 10px 12px; background: #f6f8fa; }
+  .stat b { display: block; font-size: 22px; }
+  .stat small { font-size: 11.5px; color: #59636e; }
+  .chart { display: flex; align-items: flex-end; gap: 10px; height: 92px; padding-top: 6px; }
+  .chart i { flex: 1; border-radius: 4px 4px 0 0; background: linear-gradient(#4aa3ff, #0969da); }
+  .ok { color: #1a7f37; }
+</style></head>
+<body>
+  <div class="grid"></div>
+
+  <div class="left">
+    <div class="brand"><img src="doc-glyph.svg" alt=""><span>GitHub HTML Preview</span></div>
+    <h1>See HTML files as<br><em>real pages</em>,<br>not source code.</h1>
+    <p class="sub">One click switches between Code and Preview,<br>right in GitHub's file view.</p>
+    <div class="chips"><span>Private repos</span><span>Sandboxed &amp; safe</span><span>No setup</span></div>
+  </div>
+
+  <div class="code mono"><div class="bar"><i></i><i></i><i></i></div><pre><span class="c">&lt;!doctype html&gt;</span>
+<span class="t">&lt;html</span> <span class="a">lang</span>=<span class="s">"en"</span><span class="t">&gt;</span>
+<span class="t">&lt;head&gt;</span>
+  <span class="t">&lt;style&gt;</span>
+    <span class="p">.card</span> { border-radius: <span class="a">10px</span>; }
+    <span class="p">.chart</span> { display: <span class="a">flex</span>; }
+  <span class="t">&lt;/style&gt;</span>
+<span class="t">&lt;/head&gt;</span>
+<span class="t">&lt;body&gt;</span>
+  <span class="t">&lt;div</span> <span class="a">class</span>=<span class="s">"card"</span><span class="t">&gt;</span>
+    <span class="t">&lt;h2&gt;</span>Weekly Report<span class="t">&lt;/h2&gt;</span>
+    <span class="t">&lt;div</span> <span class="a">class</span>=<span class="s">"chart"</span><span class="t">&gt;</span>…</pre></div>
+
+  <div class="win">
+    <div class="chrome"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i><div class="url">github.com/acme/docs/blob/main/report.html</div></div>
+    <div class="filebar">
+      <div class="fname"><b>docs /</b> report.html</div>
+      <div style="display:flex;align-items:center"><div class="toggle"><span>Code</span><span class="on">Preview</span></div><span class="raw">Raw</span></div>
+    </div>
+    <div class="body">
+      <div class="card">
+        <h2>Weekly Report</h2>
+        <div class="muted">Generated Oct 22 · all checks <span class="ok">passing</span></div>
+        <div class="stats">
+          <div class="stat"><b>98.4%</b><small>Uptime</small></div>
+          <div class="stat"><b>1,204</b><small>Builds</small></div>
+          <div class="stat"><b class="ok">+12%</b><small>Coverage</small></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="chart"><i style="height:40%"></i><i style="height:62%"></i><i style="height:50%"></i><i style="height:78%"></i><i style="height:66%"></i><i style="height:92%"></i><i style="height:84%"></i><i style="height:100%"></i></div>
+      </div>
+    </div>
+  </div>
+</body></html>
